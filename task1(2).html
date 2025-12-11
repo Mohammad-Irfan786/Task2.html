@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TaskForge – Task & Project Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      background: #050816;
+      color: #f5f5f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top bar */
+    header {
+      background: #0b1020;
+      border-bottom: 1px solid #151a2a;
+      padding: 0.8rem 1.4rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .logo {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #4f8cff;
+    }
+
+    .filters {
+      flex: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      justify-content: center;
+    }
+
+    .filters input,
+    .filters select {
+      padding: 0.35rem 0.55rem;
+      border-radius: 4px;
+      border: 1px solid #252a3c;
+      background: #050816;
+      color: #f5f5f5;
+      font-size: 0.8rem;
+    }
+
+    .filters button {
+      padding: 0.4rem 0.7rem;
+      border-radius: 4px;
+      border: none;
+      background: #4f8cff;
+      color: #fff;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .filters button:hover {
+      background: #6b9dff;
+    }
+
+    .user-badge {
+      font-size: 0.8rem;
+      color: #d0d4ff;
+    }
+
+    main {
+      flex: 1;
+      padding: 1rem 1.4rem 1.4rem;
+      display: grid;
+      grid-template-columns: 2.1fr 1.1fr;
+      gap: 1rem;
+    }
+
+    /* Left column: board + list */
+    .board-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.3rem;
+    }
+
+    h2 {
+      font-size: 1.05rem;
+    }
+
+    .btn-primary {
+      padding: 0.35rem 0.7rem;
+      border-radius: 4px;
+      border: none;
+      background: #4f8cff;
+      color: #fff;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn-primary:hover {
+      background: #6b9dff;
+    }
+
+    /* Kanban board */
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.7rem;
+    }
+
+    .column {
+      background: #0b1020;
+      border-radius: 8px;
+      border: 1px solid #151a2a;
+      padding: 0.6rem 0.7rem;
+      min-height: 220px;
+    }
+
+    .column-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.4rem;
+    }
+
+    .column-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .column-count {
+      font-size: 0.75rem;
+      color: #a0a4c0;
+    }
+
+    .task-card {
+      background: #050816;
+      border-radius: 6px;
+      border: 1px solid #1c2238;
+      padding: 0.45rem 0.55rem;
+      margin-bottom: 0.45rem;
+      font-size: 0.8rem;
+      cursor: grab;
+    }
+
+    .task-card.dragging {
+      opacity: 0.6;
+      border-style: dashed;
+    }
+
+    .task-title {
+      font-weight: 600;
+      margin-bottom: 0.15rem;
+    }
+
+    .task-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .pill {
+      padding: 0.05rem 0.35rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      border: 1px solid #252a3c;
+      color: #d0d4ff;
+    }
+
+    .priority-high { border-color: #ff5c7a; color: #ff98ac; }
+    .priority-med  { border-color: #f2b03b; color: #ffd28a; }
+    .priority-low  { border-color: #3bd88f; color: #9ff4c8; }
+
+    .status-pill {
+      border-color: #4f8cff;
+      color: #9ec1ff;
+    }
+
+    .assignee-pill {
+      border-color: #7d5cff;
+      color: #c4b2ff;
+    }
+
+    .due-pill.overdue {
+      border-color: #ff5c7a;
+      color: #ff98ac;
+    }
+
+    .task-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.15rem;
+    }
+
+    .task-actions button {
+      border: none;
+      background: transparent;
+      color: #8a90b8;
+      font-size: 0.7rem;
+      cursor: pointer;
+      margin-left: 0.15rem;
+    }
+
+    .task-actions button:hover {
+      color: #ffd28a;
+    }
+
+    /* Right column: details + chart */
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .card {
+      background: #0b1020;
+      border-radius: 8px;
+      border: 1px solid #151a2a;
+      padding: 0.65rem 0.75rem;
+      font-size: 0.82rem;
+    }
+
+    .card h3 {
+      font-size: 0.95rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.4rem;
+      margin-bottom: 0.45rem;
+    }
+
+    .stat {
+      background: #050816;
+      border-radius: 6px;
+      padding: 0.4rem 0.45rem;
+      border: 1px solid #151a2a;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      color: #9ea3c8;
+    }
+
+    .stat-value {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .progress-bar-outer {
+      margin-top: 0.35rem;
+      height: 8px;
+      border-radius: 999px;
+      background: #151a2a;
+      overflow: hidden;
+    }
+
+    .progress-bar-inner {
+      height: 100%;
+      background: linear-gradient(90deg, #3bd88f, #4f8cff);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .task-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.3rem;
+      font-size: 0.78rem;
+    }
+
+    .task-table th,
+    .task-table td {
+      padding: 0.3rem 0.2rem;
+      border-bottom: 1px solid #151a2a;
+      text-align: left;
+    }
+
+    .task-table th {
+      font-weight: 600;
+      color: #a0a4c0;
+      font-size: 0.75rem;
+    }
+
+    .badge-status {
+      padding: 0.05rem 0.3rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+    }
+
+    .badge-todo { background: #151a2a; color: #ccd0ff; }
+    .badge-progress { background: #1c3455; color: #a2d6ff; }
+    .badge-done { background: #123524; color: #9ff4c8; }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding-top: 3.5rem;
+      z-index: 20;
+    }
+
+    .modal {
+      width: min(480px, 95%);
+      background: #050816;
+      border-radius: 10px;
+      border: 1px solid #151a2a;
+      padding: 0.8rem 0.9rem 0.9rem;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.4rem;
+    }
+
+    .modal-header h3 {
+      font-size: 0.95rem;
+    }
+
+    .close-btn {
+      border: none;
+      background: transparent;
+      color: #8a90b8;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    .form-group {
+      margin-bottom: 0.45rem;
+      font-size: 0.8rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.15rem;
+      color: #c5c9e8;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      background: #050816;
+      color: #f5f5f5;
+      border-radius: 4px;
+      border: 1px solid #252a3c;
+      padding: 0.35rem 0.45rem;
+      font-size: 0.8rem;
+    }
+
+    .form-group textarea {
+      min-height: 60px;
+      resize: vertical;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.4rem;
+      margin-top: 0.4rem;
+    }
+
+    .btn-secondary {
+      padding: 0.35rem 0.65rem;
+      border-radius: 4px;
+      border: 1px solid #252a3c;
+      background: transparent;
+      color: #e3e6ff;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .btn-danger {
+      padding: 0.35rem 0.65rem;
+      border-radius: 4px;
+      border: 1px solid #ff5c7a;
+      background: transparent;
+      color: #ff98ac;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 650px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .filters {
+        justify-content: flex-start;
+      }
+      .board {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">TaskForge</div>
+
+    <div class="filters">
+      <input id="searchInput" type="text" placeholder="Search tasks or projects..." />
+      <select id="statusFilter">
+        <option value="all">All statuses</option>
+        <option value="todo">To do</option>
+        <option value="in-progress">In progress</option>
+        <option value="done">Done</option>
+      </select>
+      <select id="priorityFilter">
+        <option value="all">All priorities</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+      <select id="sortSelect">
+        <option value="due">Sort by due date</option>
+        <option value="priority">Sort by priority</option>
+        <option value="status">Sort by status</option>
+      </select>
+      <button id="applyFiltersBtn">Apply</button>
+    </div>
+
+    <div class="user-badge">
+      Team workspace · <span id="taskCountLabel"></span>
+    </div>
+  </header>
+
+  <main>
+    <section class="board-wrapper">
+      <div class="section-header">
+        <h2>Team Tasks Board</h2>
+        <button class="btn-primary" id="newTaskBtn">+ New task</button>
+      </div>
+
+      <div class="board" id="board">
+        <div class="column" data-status="todo">
+          <div class="column-header">
+            <span class="column-title">To do</span>
+            <span class="column-count" id="count-todo"></span>
+          </div>
+          <div class="column-body" id="col-todo"></div>
+        </div>
+
+        <div class="column" data-status="in-progress">
+          <div class="column-header">
+            <span class="column-title">In progress</span>
+            <span class="column-count" id="count-in-progress"></span>
+          </div>
+          <div class="column-body" id="col-in-progress"></div>
+        </div>
+
+        <div class="column" data-status="done">
+          <div class="column-header">
+            <span class="column-title">Done</span>
+            <span class="column-count" id="count-done"></span>
+          </div>
+          <div class="column-body" id="col-done"></div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="side-panel">
+      <div class="card">
+        <h3>Project overview</h3>
+        <div class="summary-grid">
+          <div class="stat">
+            <div class="stat-label">Total tasks</div>
+            <div class="stat-value" id="stat-total">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">In progress</div>
+            <div class="stat-value" id="stat-progress">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Completed</div>
+            <div class="stat-value" id="stat-done">0</div>
+          </div>
+        </div>
+        <div class="stat-label">Overall completion</div>
+        <div class="progress-bar-outer">
+          <div class="progress-bar-inner" id="progressBar"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Upcoming deadlines</h3>
+        <table class="task-table" id="deadlineTable">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Owner</th>
+              <th>Due</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Task modal -->
+  <div id="modalBackdrop" class="modal-backdrop" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">New task</h3>
+        <button class="close-btn" id="closeModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="taskTitleInput">Title</label>
+          <input id="taskTitleInput" type="text" placeholder="e.g., Design dashboard layout" />
+        </div>
+
+        <div class="form-group">
+          <label for="projectInput">Project</label>
+          <input id="projectInput" type="text" placeholder="e.g., Web Platform Revamp" />
+        </div>
+
+        <div class="form-group">
+          <label for="assigneeInput">Assignee</label>
+          <input id="assigneeInput" type="text" placeholder="e.g., Priya, Alex" />
+        </div>
+
+        <div class="form-group">
+          <label for="dueInput">Due date</label>
+          <input id="dueInput" type="date" />
+        </div>
+
+        <div class="form-group">
+          <label>Priority & status</label>
+          <div style="display:flex; gap:0.4rem;">
+            <select id="priorityInput">
+              <option value="high">High</option>
+              <option value="medium" selected>Medium</option>
+              <option value="low">Low</option>
+            </select>
+            <select id="statusInput">
+              <option value="todo">To do</option>
+              <option value="in-progress">In progress</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="descriptionInput">Description</label>
+          <textarea id="descriptionInput" placeholder="Briefly describe the task, context, and expected outcome."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-danger" id="deleteTaskBtn" style="display:none;">Delete</button>
+        <button class="btn-secondary" id="cancelBtn">Cancel</button>
+        <button class="btn-primary" id="saveTaskBtn">Save task</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Sample initial tasks (in a real app this would come from a backend) ---
+    const initialTasks = [
+      {
+        id: "t1",
+        title: "Design dashboard layout",
+        project: "TaskForge MVP",
+        assignee: "Ananya",
+        priority: "high",
+        status: "in-progress",
+        due: new Date().toISOString().slice(0,10),
+        description: "Create responsive dashboard wireframes for desktop and mobile.",
+      },
+      {
+        id: "t2",
+        title: "Implement task CRUD API",
+        project: "TaskForge Backend",
+        assignee: "Karan",
+        priority: "high",
+        status: "todo",
+        due: addDaysAsISO(3),
+        description: "REST endpoints for creating, updating, deleting, and listing tasks.",
+      },
+      {
+        id: "t3",
+        title: "Progress chart using JS",
+        project: "TaskForge MVP",
+        assignee: "Sara",
+        priority: "medium",
+        status: "in-progress",
+        due: addDaysAsISO(5),
+        description: "Visualize project completion using a simple progress indicator.",
+      },
+      {
+        id: "t4",
+        title: "Team onboarding checklist",
+        project: "Internal",
+        assignee: "Ravi",
+        priority: "low",
+        status: "done",
+        due: addDaysAsISO(-2),
+        description: "Document basic steps for new team members using TaskForge.",
+      }
+    ];
+
+    function addDaysAsISO(days) {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      return d.toISOString().slice(0,10);
+    }
+
+    let tasks = JSON.parse(localStorage.getItem("taskforge_tasks") || "null") || initialTasks;
+    let editingTaskId = null;
+
+    const colTodo = document.getElementById("col-todo");
+    const colInProg = document.getElementById("col-in-progress");
+    const colDone = document.getElementById("col-done");
+
+    const countTodo = document.getElementById("count-todo");
+    const countInProg = document.getElementById("count-in-progress");
+    const countDone = document.getElementById("count-done");
+    const taskCountLabel = document.getElementById("taskCountLabel");
+
+    const statTotal = document.getElementById("stat-total");
+    const statProgress = document.getElementById("stat-progress");
+    const statDone = document.getElementById("stat-done");
+    const progressBar = document.getElementById("progressBar");
+    const deadlineTableBody = document.querySelector("#deadlineTable tbody");
+
+    const modalBackdrop = document.getElementById("modalBackdrop");
+    const modalTitle = document.getElementById("modalTitle");
+    const closeModalBtn = document.getElementById("closeModalBtn");
+    const newTaskBtn = document.getElementById("newTaskBtn");
+    const saveTaskBtn = document.getElementById("saveTaskBtn");
+    const deleteTaskBtn = document.getElementById("deleteTaskBtn");
+    const cancelBtn = document.getElementById("cancelBtn");
+
+    const titleInput = document.getElementById("taskTitleInput");
+    const projectInput = document.getElementById("projectInput");
+    const assigneeInput = document.getElementById("assigneeInput");
+    const dueInput = document.getElementById("dueInput");
+    const priorityInput = document.getElementById("priorityInput");
+    const statusInput = document.getElementById("statusInput");
+    const descriptionInput = document.getElementById("descriptionInput");
+
+    const searchInput = document.getElementById("searchInput");
+    const statusFilter = document.getElementById("statusFilter");
+    const priorityFilter = document.getElementById("priorityFilter");
+    const sortSelect = document.getElementById("sortSelect");
+    const applyFiltersBtn = document.getElementById("applyFiltersBtn");
+
+    function saveState() {
+      localStorage.setItem("taskforge_tasks", JSON.stringify(tasks));
+    }
+
+    function applyFilters() {
+      let filtered = [...tasks];
+      const query = searchInput.value.trim().toLowerCase();
+      if (query) {
+        filtered = filtered.filter(t =>
+          t.title.toLowerCase().includes(query) ||
+          t.project.toLowerCase().includes(query) ||
+          t.assignee.toLowerCase().includes(query)
+        );
+      }
+      if (statusFilter.value !== "all") {
+        filtered = filtered.filter(t => t.status === statusFilter.value);
+      }
+      if (priorityFilter.value !== "all") {
+        filtered = filtered.filter(t => t.priority === priorityFilter.value);
+      }
+      if (sortSelect.value === "due") {
+        filtered.sort((a,b) => (a.due || "").localeCompare(b.due || ""));
+      } else if (sortSelect.value === "priority") {
+        const order = { high: 0, medium: 1, low: 2 };
+        filtered.sort((a,b) => order[a.priority]-order[b.priority]);
+      } else if (sortSelect.value === "status") {
+        const sOrder = { "todo":0,"in-progress":1,"done":2 };
+        filtered.sort((a,b) => sOrder[a.status]-sOrder[b.status]);
+      }
+      return filtered;
+    }
+
+    function render() {
+      const subset = applyFilters();
+
+      colTodo.innerHTML = "";
+      colInProg.innerHTML = "";
+      colDone.innerHTML = "";
+
+      const byId = new Map(subset.map(t => [t.id, t]));
+      const colMap = {
+        "todo": colTodo,
+        "in-progress": colInProg,
+        "done": colDone
+      };
+
+      subset.forEach(task => {
+        const card = document.createElement("div");
+        card.className = "task-card";
+        card.draggable = true;
+        card.dataset.id = task.id;
+
+        const today = new Date().toISOString().slice(0,10);
+        const overdue = task.due && task.due < today && task.status !== "done";
+
+        card.innerHTML = `
+          <div class="task-title">${task.title}</div>
+          <div class="task-meta">
+            <span class="pill assignee-pill">${task.assignee || "Unassigned"}</span>
+            <span class="pill status-pill">${prettyStatus(task.status)}</span>
+            <span class="pill ${priorityClass(task.priority)}">${prettyPriority(task.priority)}</span>
+            <span class="pill due-pill ${overdue ? "overdue" : ""}">
+              ${task.due || "No due"}
+            </span>
+          </div>
+          <div class="task-footer">
+            <span style="font-size:0.7rem;color:#9ea3c8;">${task.project || "No project"}</span>
+            <div class="task-actions">
+              <button data-action="edit">Edit</button>
+              <button data-action="delete">✕</button>
+            </div>
+          </div>
+        `;
+        colMap[task.status].appendChild(card);
+
+        // drag events
+        card.addEventListener("dragstart", e => {
+          card.classList.add("dragging");
+          e.dataTransfer.setData("text/plain", task.id);
+        });
+        card.addEventListener("dragend", () => {
+          card.classList.remove("dragging");
+        });
+
+        card.querySelector(".task-actions").addEventListener("click", e => {
+          const btn = e.target.closest("button");
+          if (!btn) return;
+          const action = btn.dataset.action;
+          if (action === "edit") {
+            openModal(task);
+          } else if (action === "delete") {
+            if (confirm("Delete this task?")) {
+              tasks = tasks.filter(t => t.id !== task.id);
+              saveState();
+              render();
+            }
+          }
+        });
+      });
+
+      const all = tasks;
+      countTodo.textContent = subset.filter(t => t.status === "todo").length + " tasks";
+      countInProg.textContent = subset.filter(t => t.status === "in-progress").length + " tasks";
+      countDone.textContent = subset.filter(t => t.status === "done").length + " tasks";
+      taskCountLabel.textContent = ${all.length} tasks in ${new Set(all.map(t => t.project)).size || 1} projects;
+
+      const total = all.length || 1;
+      const doneCount = all.filter(t => t.status === "done").length;
+      const progressCount = all.filter(t => t.status === "in-progress").length;
+      const pct = Math.round((doneCount / total) * 100);
+
+      statTotal.textContent = total;
+      statProgress.textContent = progressCount;
+      statDone.textContent = doneCount;
+      progressBar.style.width = pct + "%";
+
+      deadlineTableBody.innerHTML = "";
+      const upcoming = [...all]
+        .filter(t => t.due)
+        .sort((a,b) => a.due.localeCompare(b.due))
+        .slice(0, 6);
+
+      upcoming.forEach(t => {
+        const tr = document.createElement("tr");
+        const badgeClass =
+          t.status === "done" ? "badge-done" :
+          t.status === "in-progress" ? "badge-progress" :
+          "badge-todo";
+        tr.innerHTML = `
+          <td>${t.title}</td>
+          <td>${t.assignee || "-"}</td>
+          <td>${t.due}</td>
+          <td><span class="badge-status ${badgeClass}">${prettyStatus(t.status)}</span></td>
+        `;
+        deadlineTableBody.appendChild(tr);
+      });
+    }
+
+    function prettyStatus(status) {
+      if (status === "todo") return "To do";
+      if (status === "in-progress") return "In progress";
+      return "Done";
+    }
+
+    function prettyPriority(p) {
+      if (p === "high") return "High";
+      if (p === "medium") return "Medium";
+      return "Low";
+    }
+
+    function priorityClass(p) {
+      if (p === "high") return "priority-high";
+      if (p === "medium") return "priority-med";
+      return "priority-low";
+    }
+
+    // Drag drop on columns
+    document.querySelectorAll(".column").forEach(col => {
+      col.addEventListener("dragover", e => {
+        e.preventDefault();
+      });
+      col.addEventListener("drop", e => {
+        e.preventDefault();
+        const id = e.dataTransfer.getData("text/plain");
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
+        task.status = col.dataset.status;
+        saveState();
+        render();
+      });
+    });
+
+    // Modal logic
+    function openModal(task) {
+      if (task) {
+        editingTaskId = task.id;
+        modalTitle.textContent = "Edit task";
+        titleInput.value = task.title;
+        projectInput.value = task.project;
+        assigneeInput.value = task.assignee;
+        dueInput.value = task.due || "";
+        priorityInput.value = task.priority;
+        statusInput.value = task.status;
+        descriptionInput.value = task.description || "";
+        deleteTaskBtn.style.display = "inline-block";
+      } else {
+        editingTaskId = null;
+        modalTitle.textContent = "New task";
+        titleInput.value = "";
+        projectInput.value = "";
+        assigneeInput.value = "";
+        dueInput.value = "";
+        priorityInput.value = "medium";
+        statusInput.value = "todo";
+        descriptionInput.value = "";
+        deleteTaskBtn.style.display = "none";
+      }
+      modalBackdrop.style.display = "flex";
+    }
+
+    function closeModal() {
+      modalBackdrop.style.display = "none";
+    }
+
+    newTaskBtn.addEventListener("click", () => openModal(null));
+    closeModalBtn.addEventListener("click", closeModal);
+    cancelBtn.addEventListener("click", closeModal);
+
+    saveTaskBtn.addEventListener("click", () => {
+      const title = titleInput.value.trim();
+      if (!title) {
+        alert("Title is required.");
+        return;
+      }
+      const taskData = {
+        id: editingTaskId || "t" + Date.now(),
+        title,
+        project: projectInput.value.trim() || "General",
+        assignee: assigneeInput.value.trim() || "Unassigned",
+        due: dueInput.value || "",
+        priority: priorityInput.value,
+        status: statusInput.value,
+        description: descriptionInput.value.trim()
+      };
+
+      if (editingTaskId) {
+        tasks = tasks.map(t => t.id === editingTaskId ? taskData : t);
+      } else {
+        tasks.push(taskData);
+      }
+      saveState();
+      closeModal();
+      render();
+    });
+
+    deleteTaskBtn.addEventListener("click", () => {
+      if (!editingTaskId) return;
+      if (confirm("Delete this task?")) {
+        tasks = tasks.filter(t => t.id !== editingTaskId);
+        saveState();
+        closeModal();
+        render();
+      }
+    });
+
+    modalBackdrop.addEventListener("click", e => {
+      if (e.target === modalBackdrop) closeModal();
+    });
+
+    // Filters
+    applyFiltersBtn.addEventListener("click", render);
+    searchInput.addEventListener("keyup", e => {
+      if (e.key === "Enter") render();
+    });
+    statusFilter.addEventListener("change", render);
+    priorityFilter.addEventListener("change", render);
+    sortSelect.addEventListener("change", render);
+
+    render();
+  </script>
+</body>
+</html>

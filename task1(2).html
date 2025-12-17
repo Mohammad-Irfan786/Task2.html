@@ -595,7 +595,7 @@
   </div>
 
   <script>
-    // --- Sample initial tasks (in a real app this would come from a backend) ---
+    // Sample initial tasks
     const initialTasks = [
       {
         id: "t1",
@@ -648,6 +648,7 @@
     let tasks = JSON.parse(localStorage.getItem("taskforge_tasks") || "null") || initialTasks;
     let editingTaskId = null;
 
+    // DOM elements
     const colTodo = document.getElementById("col-todo");
     const colInProg = document.getElementById("col-in-progress");
     const colDone = document.getElementById("col-done");
@@ -724,7 +725,6 @@
       colInProg.innerHTML = "";
       colDone.innerHTML = "";
 
-      const byId = new Map(subset.map(t => [t.id, t]));
       const colMap = {
         "todo": colTodo,
         "in-progress": colInProg,
@@ -789,7 +789,7 @@
       countTodo.textContent = subset.filter(t => t.status === "todo").length + " tasks";
       countInProg.textContent = subset.filter(t => t.status === "in-progress").length + " tasks";
       countDone.textContent = subset.filter(t => t.status === "done").length + " tasks";
-      taskCountLabel.textContent = ${all.length} tasks in ${new Set(all.map(t => t.project)).size || 1} projects;
+      taskCountLabel.textContent = `${all.length} tasks in ${new Set(all.map(t => t.project)).size || 1} projects`;
 
       const total = all.length || 1;
       const doneCount = all.filter(t => t.status === "done").length;
@@ -934,7 +934,7 @@
       if (e.target === modalBackdrop) closeModal();
     });
 
-    // Filters
+    // Filters - BOTH BUTTONS WORKING ✅
     applyFiltersBtn.addEventListener("click", render);
     searchInput.addEventListener("keyup", e => {
       if (e.key === "Enter") render();
